@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── Potaro palette (exact, dark-only) ───────────────────────────────
+   #2d0a1e Black Cherry   page background
+   #5c1a3b Soul Anchor    cards, elevated surfaces, sidebar
+   #8b2a5c Pink Horror    borders, dividers, hover states
+   #b83d78 Razzle Dazzle  primary buttons, active states, tag pills, links, icons
+   #d66b9a Preppy Rose    primary text, accent highlights, selected states
+   Accessibility: #d66b9a is primary text on #2d0a1e/#5c1a3b.
+   Secondary text (#b83d78) must be bold, min 14px — never smaller.
+   #8b2a5c and #5c1a3b are NEVER used as text on any background. */
+
+@theme {
+  /* Brand palette (identity tokens, referenced by the comments above). */
+  --color-black-cherry: oklch(0.2139 0.0634 348.46);
+  --color-soul-anchor: oklch(0.3352 0.1027 353.23);
+  --color-pink-horror: oklch(0.4479 0.1404 352.52);
+  --color-razzle-dazzle: oklch(0.552 0.1678 354.45);
+  --color-preppy-rose: oklch(0.6662 0.1437 354.05);
+  /* Base sans stack; mono + display are defined via next/font vars in @theme inline. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* Geist Mono (loaded via next/font) for metadata/labels; falls back to system mono. */
+  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace);
+  /* Kensmark (display) once restored; graceful system fallback until then. */
+  --font-display: var(--font-kensmark, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ── Palette: minimal dark + ONE burgundy primary ────────────────────
+   Surfaces are warm neutral darks; #b83d78 (burgundy) is the single accent
+   used for interactive/emphatic elements (buttons, links, active states,
+   focus rings, icons). Every text pairing passes WCAG AA. */
+
+/* Dark-only: tokens live on :root so the app is always dark. */
+:root {
+  color-scheme: dark;
+  --background: oklch(0.1839 0.0088 334.7); /* #151114 warm black */
+  --foreground: oklch(0.9531 0.0086 308.4); /* #f1eef4 near-white */
+  --card: oklch(0.2245 0.0113 319.5); /* #1e1a1f */
+  --card-foreground: oklch(0.9531 0.0086 308.4);
+  --popover: oklch(0.2563 0.0148 316.4); /* #262128 */
+  --popover-foreground: oklch(0.9531 0.0086 308.4);
+  --primary: oklch(0.552 0.1678 354.45); /* #b83d78 the burgundy */
+  --primary-foreground: oklch(1 0 0); /* white on burgundy (5.3:1) */
+  --secondary: oklch(0.2245 0.0113 319.5);
+  --secondary-foreground: oklch(0.9531 0.0086 308.4);
+  --muted: oklch(0.2245 0.0113 319.5);
+  --muted-foreground: oklch(0.7124 0.0169 319.5); /* #a79fa9 (7.3:1) */
+  --accent: oklch(1 0 0 / 0.08);
+  --accent-foreground: oklch(0.9531 0.0086 308.4);
+  --destructive: oklch(0.6397 0.18 4.2); /* #e0527f bright cherry, errors only */
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.14);
+  --ring: oklch(0.552 0.1678 354.45); /* burgundy focus ring */
+  --chart-1: oklch(0.552 0.1678 354.45); /* #b83d78 */
+  --chart-2: oklch(0.6662 0.1437 354.05); /* #d66b9a */
+  --chart-3: oklch(0.7124 0.0169 319.5); /* #a79fa9 */
+  --chart-4: oklch(0.2245 0.0113 319.5); /* #1e1a1f */
+  --chart-5: oklch(0.1839 0.0088 334.7); /* #151114 */
+  --radius: 0.75rem;
+  --sidebar: oklch(0.205 0.0075 325.8); /* #191619 */
+  --sidebar-foreground: oklch(0.9531 0.0086 308.4);
+  --sidebar-primary: oklch(0.552 0.1678 354.45);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(1 0 0 / 0.08);
+  --sidebar-accent-foreground: oklch(0.9531 0.0086 308.4);
+  --sidebar-border: oklch(1 0 0 / 0.1);
+  --sidebar-ring: oklch(0.552 0.1678 354.45);
+}
+
+/* Keep .dark identical so dark: variants are consistent (dark-only app). */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.1839 0.0088 334.7);
+  --foreground: oklch(0.9531 0.0086 308.4);
+  --card: oklch(0.2245 0.0113 319.5);
+  --card-foreground: oklch(0.9531 0.0086 308.4);
+  --popover: oklch(0.2563 0.0148 316.4);
+  --popover-foreground: oklch(0.9531 0.0086 308.4);
+  --primary: oklch(0.552 0.1678 354.45);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.2245 0.0113 319.5);
+  --secondary-foreground: oklch(0.9531 0.0086 308.4);
+  --muted: oklch(0.2245 0.0113 319.5);
+  --muted-foreground: oklch(0.7124 0.0169 319.5);
+  --accent: oklch(1 0 0 / 0.08);
+  --accent-foreground: oklch(0.9531 0.0086 308.4);
+  --destructive: oklch(0.6397 0.18 4.2);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.14);
+  --ring: oklch(0.552 0.1678 354.45);
+  --chart-1: oklch(0.552 0.1678 354.45);
+  --chart-2: oklch(0.6662 0.1437 354.05);
+  --chart-3: oklch(0.7124 0.0169 319.5);
+  --chart-4: oklch(0.2245 0.0113 319.5);
+  --chart-5: oklch(0.1839 0.0088 334.7);
+  --sidebar: oklch(0.205 0.0075 325.8);
+  --sidebar-foreground: oklch(0.9531 0.0086 308.4);
+  --sidebar-primary: oklch(0.552 0.1678 354.45);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(1 0 0 / 0.08);
+  --sidebar-accent-foreground: oklch(0.9531 0.0086 308.4);
+  --sidebar-border: oklch(1 0 0 / 0.1);
+  --sidebar-ring: oklch(0.552 0.1678 354.45);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans bg-background;
+    /* Kensmark ships Bold only — never let the browser fake other weights. */
+    font-synthesis: none;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  ::selection {
+    @apply bg-primary text-primary-foreground;
+  }
+}
+
+/* Library canvas — faint square grid from the Paper frame. */
+@layer utilities {
+  .library-canvas {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
+
+/* Dashed divider — low-key cherry dashes on a wide rhythm. Full-strength
+   dashes with a short gap read dense and loud; a ~40% alpha dash with a
+   longer gap recedes into a faint perforation instead of a line. */
+@layer utilities {
+  .rule-dashed {
+    height: 2px;
+    background-image: linear-gradient(
+      90deg,
+      oklch(0.55 0.14 352.5 / 0.4) 0 5px,
+      transparent 5px 16px
+    );
+    background-size: 16px 2px;
+    background-repeat: repeat-x;
+  }
+}
