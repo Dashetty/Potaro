@@ -3,10 +3,10 @@
 
 import {
   AnimatePresence,
-  animate,
   motion,
   useReducedMotion,
 } from "motion/react";
+import { EASE_OUT } from "@/lib/ease";
 import {
   forwardRef,
   useEffect,
@@ -88,15 +88,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   // Right edge shows the success check, otherwise the caller's right icon.
   const rightSlot = success ? null : rightIcon;
 
-  // Shake the field when an error appears.
-  useEffect(() => {
-    if (!fieldRef.current || reduce || !hasError) return;
-    animate(
-      fieldRef.current,
-      { x: [0, -6, 6, -4, 4, -2, 0] },
-      { duration: 0.45 },
-    );
-  }, [hasError, reduce]);
+  // Shake keyframes as a reusable motion value so the animation is reversible:
+  // if the error clears mid-shake, motion snaps `x` back to 0 instead of
+  // finishing the sequence.
+  const shakeX = 
+    reduce || !hasError
+      ? 0
+      : [0, -6, 6, -4, 4, -2, 0];
+
+  // Keep the shake sequence mounted while there is an error so motion can
+  // interpolate between the current frame and the next; drop it the moment the
+  // error clears so the field returns to rest in the same commit.
+  const shakeTransition = reduce
+    ? undefined
+    : hasError
+      ? { duration: 0.45, times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 1] }
+      : { duration: 0.18, ease: EASE_OUT };
 
   const handleChange = (next: string) => {
     if (!controlled) setInternal(next);
@@ -119,7 +126,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         </label>
       ) : null}
 
-      <div
+      <motion.div
         ref={fieldRef}
         data-state={
           hasError
@@ -130,6 +137,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
                 ? "focused"
                 : "idle"
         }
+        animate={{ x: shakeX }}
+        transition={shakeTransition}
         className={cn(
           "relative h-11 overflow-hidden rounded-full border transition-colors duration-200",
           "border-border",
@@ -195,7 +204,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
               strokeLinejoin="round"
               initial={reduce ? { pathLength: 1 } : { pathLength: 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              transition={{ duration: 0.35, ease: EASE_OUT }}
             />
           </motion.svg>
         ) : rightSlot ? (
@@ -208,7 +217,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             {rightSlot}
           </span>
         ) : null}
-      </div>
+      </motion.div>
 
       <div className={reserveErrorLine ? "min-h-4" : "contents"}>
         <AnimatePresence initial={false}>
@@ -221,7 +230,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
                   ? { opacity: 0 }
                   : { opacity: 0, y: -4, filter: "blur(4px)" }
               }
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              // "none", not "blur(0px)": a lingering filter rasterizes the
+              // message text and loses subpixel antialiasing.
+              animate={{ opacity: 1, y: 0, filter: "none" }}
               exit={
                 reduce
                   ? { opacity: 0 }

@@ -10,7 +10,7 @@ import {
 } from "@/components/motion/button/stateful";
 import { Button } from "@/components/motion/button/base";
 import { Loader } from "@/components/motion/loader";
-import { TagMultiSelect } from "@/components/tag-multi-select";
+import { InlineTagInput } from "@/components/inline-tag-input";
 import { addBookmark, updateBookmark } from "@/app/bookmarks/actions";
 import { normalizeUrl } from "@/lib/queries";
 import type { Bookmark } from "@/lib/types";
@@ -161,94 +161,118 @@ export function BookmarkForm({
   };
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">
+    <form onSubmit={handleSave} className="flex h-full flex-col">
+      {/* Drawer header — fixed at the top */}
+      <header className="shrink-0 border-b border-border px-5 pb-4 pt-5">
+        <h2 className="font-mono text-[20px] leading-[140%] font-semibold tracking-[-0.5px] text-foreground">
           {mode === "edit" ? "Edit bookmark" : "Add bookmark"}
         </h2>
-        <p className="mt-1 text-sm font-bold text-muted-foreground">
+        <p className="mt-1 font-mono text-sm leading-[142.857%] text-muted-foreground">
           Paste a URL and we&apos;ll pull the details.
         </p>
-      </div>
+      </header>
 
-      <div className="relative">
-        <Input
-          label="URL"
-          type="url"
-          value={url}
-          onChange={(value) => {
-            setUrl(value);
-            if (urlError) setUrlError(undefined);
-            if (mode === "add") fetchedForUrl.current = null;
-          }}
-          onBlur={() => mode === "add" && void fetchMeta(url)}
-          placeholder="https://example.com/article"
-          autoComplete="off"
-          required
-          error={urlError}
-          leftIcon={<Link2 />}
-          classNames={{ input: "pr-16" }}
-        />
-        {metaLoading ? (
-          <span className="absolute right-11 top-1/2 -translate-y-1/2 text-primary">
-            <Loader variant="spinner" size={16} label="Fetching page details" />
-          </span>
-        ) : null}
-      </div>
+      {/* Scrollable fields between header and footer */}
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-5 py-4">
+        <div>
+          <Input
+            label="URL"
+            type="url"
+            value={url}
+            onChange={(value) => {
+              setUrl(value);
+              if (urlError) setUrlError(undefined);
+              if (mode === "add") fetchedForUrl.current = null;
+            }}
+            onBlur={() => mode === "add" && void fetchMeta(url)}
+            placeholder="https://example.com/article"
+            autoComplete="off"
+            required
+            error={urlError}
+            leftIcon={<Link2 />}
+            autoFocus
+            rightIcon={
+              metaLoading ? (
+                <Loader
+                  variant="spinner"
+                  size={16}
+                  label="Fetching page details"
+                  className="pointer-events-none text-primary"
+                />
+              ) : undefined
+            }
+            classNames={{
+              label: "font-mono",
+              // Always reserve the right gutter so the fetch spinner (and the
+              // text) never jump when it appears/disappears.
+              input: "pr-12 font-mono font-light leading-5",
+              rightIcon: "pr-2",
+            }}
+          />
+        </div>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => void fetchMeta(url)}
-        className="self-end -mt-2"
-      >
-        <RefreshCw className="size-3.5" />
-        Fetch details
-      </Button>
-
-      <Input
-        label="Title"
-        value={title}
-        onChange={setTitle}
-        placeholder="Page title"
-      />
-      <Input
-        label="Description"
-        value={description}
-        onChange={setDescription}
-        placeholder="A short note about this link (optional)"
-      />
-
-      <div className="flex flex-col gap-1.5">
-        <span className="px-1 text-sm font-medium text-foreground">Tags</span>
-        <TagMultiSelect
-          value={tags}
-          onChange={setTags}
-          options={existingTags}
-        />
-      </div>
-
-      <div className="mt-2 flex gap-2">
-        <StatefulButton
-          type="submit"
-          className="flex-1"
-          state={saveState}
-          loadingText="Saving…"
-          successText="Saved"
-          errorText="Try again"
-        >
-          {mode === "edit" ? "Save changes" : "Save bookmark"}
-        </StatefulButton>
         <Button
           type="button"
-          variant="outline"
-          onClick={onClose}
-          disabled={saveState === "loading"}
+          variant="ghost"
+          size="sm"
+          onClick={() => void fetchMeta(url)}
+          className="self-end -mt-2 font-mono"
         >
-          Cancel
+          <RefreshCw className="size-3.5" />
+          Fetch details
         </Button>
+
+        <Input
+          label="Title"
+          value={title}
+          onChange={setTitle}
+          placeholder="Page title"
+          classNames={{
+            label: "font-mono",
+            input: "font-mono font-light leading-5",
+          }}
+        />
+        <Input
+          label="Description"
+          value={description}
+          onChange={setDescription}
+          placeholder="A short note"
+          classNames={{
+            label: "font-mono",
+            input: "font-mono font-light leading-5",
+          }}
+        />
+
+        <div className="flex flex-col gap-1.5">
+          <span className="px-1 font-mono text-sm font-medium text-foreground">Tags</span>
+          <InlineTagInput value={tags} onChange={setTags} options={existingTags} />
+        </div>
       </div>
+
+      {/* Sticky footer with Cancel + Save */}
+      <footer className="shrink-0 border-t border-border px-5 py-4">
+        <div className="flex gap-2">
+          <StatefulButton
+            type="submit"
+            className="flex-1 font-mono"
+            state={saveState}
+            loadingText="Saving…"
+            successText="Saved"
+            errorText="Try again"
+          >
+            {mode === "edit" ? "Save changes" : "Save bookmark"}
+          </StatefulButton>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={saveState === "loading"}
+            className="font-mono"
+          >
+            Cancel
+          </Button>
+        </div>
+      </footer>
     </form>
   );
 }

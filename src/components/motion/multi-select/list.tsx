@@ -11,7 +11,7 @@ import {
   useMemo,
   useRef,
 } from "react";
-import { EASE_OUT, SPRING_LAYOUT } from "@/lib/ease";
+import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 import {
   MultiSelectGroupContext,
@@ -170,20 +170,19 @@ export function MultiSelectItem({
         context.toggle(value);
       }}
       className={cn(
-        "relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm outline-none transition-colors duration-150",
+        "relative flex w-full items-center gap-2 rounded-lg px-2 py-2.5 min-h-[40px] text-left text-sm outline-none transition-colors duration-150",
         active || selected ? "text-foreground" : "text-muted-foreground",
         "disabled:pointer-events-none disabled:opacity-45",
         className,
       )}
     >
-      {active ? (
-        <motion.span
-          aria-hidden="true"
-          layoutId={context.activeLayoutId}
-          className="absolute inset-0 -z-10 rounded-lg bg-muted"
-          transition={context.reduce ? { duration: 0 } : SPRING_LAYOUT}
-        />
-      ) : null}
+      <motion.span
+        aria-hidden="true"
+        initial={false}
+        animate={{ opacity: active ? 1 : 0 }}
+        transition={context.reduce ? { duration: 0 } : { duration: 0.15, ease: EASE_OUT }}
+        className="pointer-events-none absolute inset-0 -z-10 rounded-lg bg-foreground/[0.065]"
+      />
       <span className="min-w-0 flex-1">{children}</span>
       <motion.span
         aria-hidden="true"

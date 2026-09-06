@@ -80,7 +80,9 @@ function buildVariants(side: Side): Variants {
     animate: {
       opacity: 1,
       scale: 1,
-      filter: "blur(0px)",
+      // "none", not "blur(0px)": a lingering filter rasterizes the label
+      // and loses subpixel antialiasing.
+      filter: "none",
       x: 0,
       y: 0,
       transition: {
@@ -281,7 +283,7 @@ export function Tooltip({
                     exit="exit"
                     style={{ transformOrigin: transformOrigin[side] }}
                     className={cn(
-                      "block whitespace-nowrap rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground shadow-lg",
+                      "block whitespace-nowrap rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground shadow-lg will-change-transform",
                       className,
                     )}
                   >

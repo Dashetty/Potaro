@@ -63,7 +63,7 @@ export function MorphingModal({
               transition={{ duration: 0.2, ease: EASE_OUT }}
               {...gate}
               onClick={onClose}
-              className="pointer-events-auto fixed inset-0 z-[80] bg-background/5 [backdrop-filter:blur(14px)_saturate(140%)] [-webkit-backdrop-filter:blur(14px)_saturate(140%)]"
+              className="pointer-events-auto fixed inset-0 z-[80] bg-background/5 [backdrop-filter:blur(8px)_saturate(140%)] [-webkit-backdrop-filter:blur(8px)_saturate(140%)]"
             />
           )}
         </PresenceGate>
@@ -78,7 +78,11 @@ export function MorphingModal({
               inert={!isPresent}
               className={cn(
                 "pointer-events-none fixed inset-4 z-[80] flex justify-center",
-                placement === "bottom" ? "items-end pb-4" : "items-center",
+                // Bottom placement is a mobile bottom-sheet; center it on
+                // desktop where the sheet look reads as a stuck modal.
+                placement === "bottom"
+                  ? "items-end pb-4 md:items-center md:pb-0"
+                  : "items-center",
               )}
             >
               <motion.div
@@ -95,7 +99,7 @@ export function MorphingModal({
                 transition={SPRING_PANEL}
                 {...gate}
                 className={cn(
-                  "pointer-events-auto relative w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-background shadow-2xl will-change-transform",
+                  "pointer-events-auto relative w-full max-w-sm overflow-hidden overscroll-contain rounded-sm border border-border bg-background shadow-2xl will-change-transform",
                   className,
                 )}
               >
@@ -120,7 +124,11 @@ export function MorphingModal({
                           : {
                               opacity: 1,
                               y: 0,
-                              filter: "blur(0px)",
+                              // "none" (not "blur(0px)") so the finished
+                              // animation doesn't leave a filter inline — any
+                              // filter, even zero blur, rasterizes the text and
+                              // loses subpixel antialiasing.
+                              filter: "none",
                               transition: {
                                 duration: 0.24,
                                 ease: EASE_OUT,

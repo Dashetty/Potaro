@@ -37,7 +37,9 @@ const CASCADE_LETTER_VARIANTS: Variants = {
   animate: (delay: number = 0) => ({
     opacity: 1,
     y: "0%",
-    filter: "blur(0px)",
+    // "none", not "blur(0px)": a finished filter inline — even zero blur —
+    // rasterizes the label and loses subpixel antialiasing (blurry text).
+    filter: "none",
     transition: { ...SPRING_SWAP, delay },
   }),
   exit: (delay: number = 0) => ({
@@ -56,7 +58,7 @@ const ICON_VARIANTS: Variants = {
     opacity: 1,
     width: "1.5rem",
     scale: 1,
-    filter: "blur(0px)",
+    filter: "none",
     transition: SPRING_SWAP,
   },
   exit: {
@@ -150,7 +152,7 @@ function TextSlot({
                   key={index}
                   custom={index * CASCADE_STAGGER}
                   variants={CASCADE_LETTER_VARIANTS}
-                  className="inline-block whitespace-pre will-change-[opacity,filter,transform]"
+                  className="inline-block whitespace-pre will-change-[opacity,transform]"
                 >
                   {char}
                 </motion.span>
@@ -163,10 +165,12 @@ function TextSlot({
           <motion.span
             key={`text-${value}`}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14, filter: ROLL_BLUR }}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)" }}
+            animate={
+              reduce ? { opacity: 1 } : { opacity: 1, y: 0, filter: "none" }
+            }
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -14, filter: ROLL_BLUR }}
             transition={reduce ? { duration: 0.15 } : SPRING_SWAP}
-            className="absolute left-0 top-0 inline-block will-change-[opacity,filter,transform]"
+            className="absolute left-0 top-0 inline-block will-change-[opacity,transform]"
           >
             {children}
           </motion.span>

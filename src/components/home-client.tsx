@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { BookOpen, Globe, LogOut, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/motion/input";
@@ -10,6 +11,7 @@ import {
   type ButtonState,
 } from "@/components/motion/button/stateful";
 import { MorphingModal } from "@/components/motion/morphing-modal";
+import { Drawer } from "@/components/motion/drawer";
 import {
   AnimatedToastStack,
   useAnimatedToastStack,
@@ -19,7 +21,6 @@ import { BookmarkCard } from "@/components/bookmark-card";
 import { BookmarkForm } from "@/components/bookmark-form";
 import { deleteBookmark } from "@/app/bookmarks/actions";
 import { signOut } from "@/app/auth/actions";
-import { collectTags } from "@/lib/queries";
 import { domainOf } from "@/lib/format";
 import type { Bookmark } from "@/lib/types";
 
@@ -48,7 +49,48 @@ export function HomeClient({
   const [modal, setModal] = useState<ModalState>(null);
   const [deleteState, setDeleteState] = useState<ButtonState>("idle");
 
-  const allTags = useMemo(() => collectTags(bookmarks), [bookmarks]);
+  // Latest UI state for the global ⌘N handler, so it never opens the drawer
+  // over an open modal or palette.
+  const uiStateRef = useRef({ modal, paletteOpen });
+  useEffect(() => {
+    uiStateRef.current = { modal, paletteOpen };
+  }, [modal, paletteOpen]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "n"
+      ) {
+        event.preventDefault();
+        const { modal: m, paletteOpen: p } = uiStateRef.current;
+        if (!m && !p) setModal({ mode: "add" });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const bookmark of bookmarks) {
+      for (const tag of bookmark.tags) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [bookmarks]);
+
+  // Tags ordered by how many bookmarks carry them (heaviest first), ties
+  // alphabetical.
+  const allTags = useMemo(
+    () =>
+      [...tagCounts.keys()].sort((a, b) => {
+        const diff = (tagCounts.get(b) ?? 0) - (tagCounts.get(a) ?? 0);
+        return diff !== 0 ? diff : a.localeCompare(b);
+      }),
+    [tagCounts],
+  );
   const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
 
   const filtered = useMemo(() => {
@@ -128,10 +170,10 @@ export function HomeClient({
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="page-shell flex w-full flex-col bg-background">
       <header className="relative z-10 px-5 pt-5 pb-3 md:px-8">
         <div className="grid grid-cols-2 items-center gap-x-3 gap-y-3 md:grid-cols-[1fr_minmax(12rem,28rem)_1fr]">
-          <span className="select-none justify-self-start font-display text-4xl leading-none tracking-tight text-white md:text-5xl">
+          <span className="select-none justify-self-start font-display text-4xl leading-none tracking-tight text-white inline-block [translate-y_1px] md:text-5xl">
             Potaro
           </span>
 
@@ -179,17 +221,6 @@ export function HomeClient({
           </div>
 
           <div className="col-start-2 row-start-1 flex items-center justify-self-end gap-1.5 md:col-start-3">
-            <button
-              type="button"
-              aria-label="Search bookmarks (⌘K)"
-              onClick={() => setPaletteOpen(true)}
-              className="hidden h-8 items-center justify-center gap-1.5 rounded-full border border-white/10 px-3 transition-colors hover:bg-white/5 md:inline-flex"
-            >
-              <Search className="size-3.5 text-foreground" />
-              <kbd className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] font-medium leading-[133%] text-muted-foreground">
-                ⌘K
-              </kbd>
-            </button>
             <Button
               type="button"
               size="sm"
@@ -198,6 +229,9 @@ export function HomeClient({
             >
               <Plus className="size-4" />
               Add
+              <kbd className="hidden rounded-sm border border-white/15 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] font-medium leading-[133%] text-white md:inline-block">
+                ⌘N
+              </kbd>
             </Button>
             <Button
               type="button"
@@ -223,18 +257,26 @@ export function HomeClient({
         <div className="flex flex-wrap items-center justify-center gap-1.5 border-b-2 border-pink-horror/50 px-5 py-2.5 md:px-8">
           {allTags.map((tag) => {
             const selected = activeTag === tag;
+            const count = tagCounts.get(tag) ?? 0;
             return (
               <button
                 key={tag}
                 type="button"
                 onClick={() => setActiveTag(selected ? null : tag)}
+                aria-pressed={selected}
                 className={
-                  selected
-                    ? "shrink-0 rounded-[3px] border border-white/15 bg-white/10 px-3 py-1 font-mono text-sm text-white transition-colors"
-                    : "shrink-0 rounded-[3px] border border-white/10 bg-white/5 px-3 py-1 font-mono text-sm text-foreground transition-colors hover:bg-white/10"
+                  "flex h-7 max-w-full items-stretch overflow-hidden rounded-[3px] border font-mono transition-colors " +
+                  (selected
+                    ? "border-white/15 bg-white/10"
+                    : "border-white/10 bg-white/5 hover:bg-white/10")
                 }
               >
-                {tag}
+                <span className="grid w-[25px] shrink-0 place-items-center rounded-l-xs rounded-br-md bg-primary text-xs text-primary-foreground tabular-nums">
+                  {count}
+                </span>
+                <span className="flex min-w-0 items-center px-2.5 text-sm text-foreground">
+                  <span className="truncate">{tag}</span>
+                </span>
               </button>
             );
           })}
@@ -291,17 +333,19 @@ export function HomeClient({
           </div>
         ) : (
           <>
-            <div className="mx-auto grid w-full max-w-[38rem] grid-cols-1 gap-2.5">
-              {filtered.map((bookmark) => (
-                <BookmarkCard
-                  key={bookmark.id}
-                  bookmark={bookmark}
-                  onEdit={(b) => setModal({ mode: "edit", bookmark: b })}
-                  onDelete={(b) => setModal({ mode: "delete", bookmark: b })}
-                  onTagClick={setActiveTag}
-                />
-              ))}
-            </div>
+            <motion.div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+              <AnimatePresence initial={false} mode="popLayout">
+                {filtered.map((bookmark) => (
+                  <BookmarkCard
+                    key={bookmark.id}
+                    bookmark={bookmark}
+                    onEdit={(b) => setModal({ mode: "edit", bookmark: b })}
+                    onDelete={(b) => setModal({ mode: "delete", bookmark: b })}
+                    onTagClick={setActiveTag}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
             <p className="mx-auto w-full max-w-[38rem] py-5 text-center font-mono text-xs text-muted-foreground">
               You&apos;ve reached the end of your library
             </p>
@@ -318,14 +362,13 @@ export function HomeClient({
         emptyMessage="No bookmarks match that search."
       />
 
-      {/* Add / edit / delete modal */}
-      <MorphingModal
-        viewId={modal ? modal.mode : null}
-        onClose={() => {
-          setModal(null);
-          setDeleteState("idle");
+      {/* Add / edit drawer — right-side temporary panel */}
+      <Drawer
+        open={modal !== null && modal.mode !== "delete"}
+        onOpenChange={(open) => {
+          if (!open) setModal(null);
         }}
-        placement="bottom"
+        ariaLabel="Add or edit bookmark"
       >
         {modal?.mode === "add" ? (
           <BookmarkForm
@@ -350,13 +393,24 @@ export function HomeClient({
             }
           />
         ) : null}
+      </Drawer>
+
+      {/* Delete confirmation stays in the modal, opened from the context menu */}
+      <MorphingModal
+        viewId={modal?.mode === "delete" ? "delete" : null}
+        onClose={() => {
+          setModal(null);
+          setDeleteState("idle");
+        }}
+        placement="bottom"
+      >
         {modal?.mode === "delete" ? (
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-lg font-semibold leading-tight text-foreground">
+              <h2 className="font-mono text-lg font-semibold leading-tight text-foreground">
                 Delete bookmark?
               </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="mt-1 font-mono text-sm leading-6 text-muted-foreground">
                 “{modal.bookmark.title || modal.bookmark.url}” will be
                 permanently removed. This can&apos;t be undone.
               </p>
@@ -364,14 +418,14 @@ export function HomeClient({
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 font-mono"
                 onClick={() => setModal(null)}
                 disabled={deleteState === "loading"}
               >
                 Cancel
               </Button>
               <StatefulButton
-                className="flex-1"
+                className="flex-1 font-mono"
                 state={deleteState}
                 loadingText="Deleting…"
                 successText="Deleted"

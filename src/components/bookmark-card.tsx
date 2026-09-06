@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ExternalLink, Globe, Pencil, Trash2 } from "lucide-react";
 import {
@@ -10,9 +11,8 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/motion/context-menu";
-import { Tooltip } from "@/components/motion/tooltip";
 import { Button } from "@/components/motion/button/base";
-import { domainOf, formatRelativeTime } from "@/lib/format";
+import { formatRelativeTime } from "@/lib/format";
 import type { Bookmark } from "@/lib/types";
 
 type BookmarkCardProps = {
@@ -29,13 +29,14 @@ export function BookmarkCard({
   onTagClick,
 }: BookmarkCardProps) {
   const [faviconFailed, setFaviconFailed] = useState(false);
+  const reduce = useReducedMotion();
   const title = bookmark.title || bookmark.url;
 
   const open = () =>
     window.open(bookmark.url, "_blank", "noopener,noreferrer");
 
-  const inner = (
-    <div
+  const cardBody = (
+    <motion.div
       role="link"
       tabIndex={0}
       aria-label={title}
@@ -43,16 +44,20 @@ export function BookmarkCard({
       onKeyDown={(event) => {
         if (event.key === "Enter") open();
       }}
-      className="group h-full cursor-pointer rounded-[5px] border border-border bg-card p-3.5 shadow-[0_20px_25px_-5px_oklch(0_0_0_/_0.4),0_8px_10px_-6px_oklch(0_0_0_/_0.4)] outline-none transition-[border-color] duration-200 hover:border-white/15 focus-visible:border-primary/50"
+      initial={reduce ? { opacity: 1 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+      transition={reduce ? { duration: 0 } : { duration: 0.28, ease: "easeOut" }}
+      className="group h-full cursor-pointer rounded-[5px] border border-border bg-card p-3 outline-none transition-[border-color] duration-200 hover:border-white/15 focus-visible:border-primary/50"
     >
       <div className="flex items-center gap-2.5">
-        <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 text-primary">
+        <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-white/5 text-primary">
           {bookmark.favicon_url && !faviconFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={bookmark.favicon_url}
               alt=""
-              className="size-5 rounded-[7px] object-cover"
+              className="size-5 rounded-[7px] object-cover outline-[oklch(1_0_0_/_0.1)]"
               loading="lazy"
               onError={() => setFaviconFailed(true)}
             />
@@ -62,18 +67,22 @@ export function BookmarkCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-1 font-display text-base leading-5 tracking-tight text-foreground">
-            {title}
-          </p>
-          <div className="mt-1 flex items-center gap-1.5 font-mono text-sm leading-5 font-bold text-muted-foreground">
-            <span className="truncate">{domainOf(bookmark.url)}</span>
-            <span aria-hidden="true">
-              ·
-            </span>
-            <span className="shrink-0">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <p className="min-w-0 flex-1 truncate font-display text-base leading-5 tracking-tight text-foreground">
+              {title}
+            </p>
+            <time
+              dateTime={bookmark.created_at}
+              className="shrink-0 font-mono text-xs font-bold leading-5 text-muted-foreground tabular-nums"
+            >
               {formatRelativeTime(bookmark.created_at)}
-            </span>
+            </time>
           </div>
+          {bookmark.description ? (
+            <p className="mt-1 line-clamp-2 font-mono text-xs leading-5 break-words text-muted-foreground">
+              {bookmark.description}
+            </p>
+          ) : null}
         </div>
 
         {/* Hover actions */}
@@ -83,6 +92,7 @@ export function BookmarkCard({
             variant="ghost"
             size="icon"
             aria-label={`Edit ${title}`}
+            className="h-10 w-10"
             onClick={(event) => {
               event.stopPropagation();
               onEdit(bookmark);
@@ -95,6 +105,7 @@ export function BookmarkCard({
             variant="ghost"
             size="icon"
             aria-label={`Delete ${title}`}
+            className="h-10 w-10"
             onClick={(event) => {
               event.stopPropagation();
               onDelete(bookmark);
@@ -116,26 +127,20 @@ export function BookmarkCard({
                 event.stopPropagation();
                 onTagClick(tag);
               }}
-              className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-sm leading-5 font-bold text-foreground transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex min-w-0 max-w-full items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-sm leading-5 font-bold text-foreground transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {tag}
+              <span className="truncate">{tag}</span>
             </button>
           ))}
         </div>
       ) : null}
-    </div>
+    </motion.div>
   );
 
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        {bookmark.description ? (
-          <Tooltip content={bookmark.description} side="top" delay={350}>
-            <div className="h-full">{inner}</div>
-          </Tooltip>
-        ) : (
-          <div className="h-full">{inner}</div>
-        )}
+        <div className="h-full">{cardBody}</div>
       </ContextMenuTrigger>
       <ContextMenuContent ariaLabel={`Actions for ${title}`}>
         <ContextMenuLabel>Bookmark</ContextMenuLabel>

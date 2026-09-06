@@ -74,7 +74,6 @@ export type MultiSelectContextValue = {
   triggerRef: MutableRefObject<HTMLDivElement | null>;
   contentRef: MutableRefObject<HTMLDivElement | null>;
   inputRef: MutableRefObject<HTMLInputElement | null>;
-  activeLayoutId: string;
 };
 
 export const MultiSelectContext =
@@ -344,7 +343,6 @@ export function MultiSelect({
       triggerRef,
       contentRef,
       inputRef,
-      activeLayoutId: `${baseId}-active`,
     }),
     [
       activeItem?.id,

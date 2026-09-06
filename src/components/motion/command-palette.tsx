@@ -256,7 +256,7 @@ export function CommandPalette({
                 className="pointer-events-auto w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl will-change-transform"
               >
                 <div className="flex items-center gap-3 border-b border-border px-4">
-                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Search className="h-4 w-4 [translate-y_1px] text-muted-foreground" />
                   <input
                     ref={inputRef}
                     value={query}
@@ -323,7 +323,7 @@ export function CommandPalette({
                                 setOpen(false);
                               }}
                               className={cn(
-                                "relative isolate flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                                "relative isolate flex w-full items-center gap-3 rounded-md px-2 py-2.5 min-h-[40px] text-left text-sm transition-colors",
                                 isActive
                                   ? "text-foreground"
                                   : "text-muted-foreground",

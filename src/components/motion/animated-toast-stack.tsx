@@ -117,7 +117,7 @@ const STATUS_CLASS: Record<ToastStatus, string> = {
   neutral: "text-muted-foreground bg-primary/[0.05]",
   info: "text-primary bg-primary/10",
   loading: "text-primary bg-primary/10",
-  success: "text-preppy-rose bg-preppy-rose/10",
+  success: "text-pop bg-pop/10",
   error: "text-destructive bg-destructive/10",
 };
 
@@ -352,7 +352,9 @@ const ToastItem = memo(function ToastItem({
       animate={
         reduce
           ? { opacity: 1 }
-          : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+          : // "none", not "blur(0px)": a lingering filter rasterizes the
+            // toast text and loses subpixel antialiasing.
+            { opacity: 1, y: 0, scale: 1, filter: "none" }
       }
       exit={
         reduce
@@ -407,7 +409,7 @@ const ToastItem = memo(function ToastItem({
                   animate={
                     reduce
                       ? { opacity: 1 }
-                      : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+                      : { opacity: 1, y: 0, scale: 1, filter: "none" }
                   }
                   exit={
                     reduce
@@ -438,7 +440,7 @@ const ToastItem = memo(function ToastItem({
                   animate={
                     reduce
                       ? { opacity: 1 }
-                      : { opacity: 1, y: 0, filter: "blur(0px)" }
+                      : { opacity: 1, y: 0, filter: "none" }
                   }
                   exit={
                     reduce
