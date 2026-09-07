@@ -12,10 +12,12 @@ import {
 } from "@/components/motion/button/stateful";
 import { MorphingModal } from "@/components/motion/morphing-modal";
 import { Drawer } from "@/components/motion/drawer";
+import { Dock, DockItem, DockSeparator } from "@/components/motion/dock";
 import {
   AnimatedToastStack,
   useAnimatedToastStack,
 } from "@/components/motion/animated-toast-stack";
+import { TagBar } from "@/components/tag-bar";
 import { CommandPalette } from "@/components/motion/command-palette";
 import { BookmarkCard } from "@/components/bookmark-card";
 import { BookmarkForm } from "@/components/bookmark-form";
@@ -58,10 +60,7 @@ export function HomeClient({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === "n"
-      ) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
         event.preventDefault();
         const { modal: m, paletteOpen: p } = uiStateRef.current;
         if (!m && !p) setModal({ mode: "add" });
@@ -199,23 +198,7 @@ export function HomeClient({
                   >
                     <X className="size-4" />
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    aria-label="Open command palette"
-                    onClick={() => setPaletteOpen(true)}
-                    className="md:hidden"
-                  >
-                    <span className="flex items-center gap-0.5">
-                      <kbd className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-                        ⌘
-                      </kbd>
-                      <kbd className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-                        K
-                      </kbd>
-                    </span>
-                  </button>
-                )
+                ) : undefined
               }
             />
           </div>
@@ -225,7 +208,7 @@ export function HomeClient({
               type="button"
               size="sm"
               onClick={() => setModal({ mode: "add" })}
-              className="font-mono active:scale-[0.96]"
+              className="hidden font-mono active:scale-[0.96] md:inline-flex"
             >
               <Plus className="size-4" />
               Add
@@ -238,6 +221,7 @@ export function HomeClient({
               variant="ghost"
               size="icon"
               aria-label="Sign out"
+              className="hidden md:inline-flex"
               onClick={() => {
                 void signOut();
               }}
@@ -254,46 +238,17 @@ export function HomeClient({
       </header>
 
       {allTags.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 border-b-2 border-pink-horror/50 px-5 py-2.5 md:px-8">
-          {allTags.map((tag) => {
-            const selected = activeTag === tag;
-            const count = tagCounts.get(tag) ?? 0;
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setActiveTag(selected ? null : tag)}
-                aria-pressed={selected}
-                className={
-                  "flex h-7 max-w-full items-stretch overflow-hidden rounded-[3px] border font-mono transition-colors " +
-                  (selected
-                    ? "border-white/15 bg-white/10"
-                    : "border-white/10 bg-white/5 hover:bg-white/10")
-                }
-              >
-                <span className="grid w-[25px] shrink-0 place-items-center rounded-l-xs rounded-br-md bg-primary text-xs text-primary-foreground tabular-nums">
-                  {count}
-                </span>
-                <span className="flex min-w-0 items-center px-2.5 text-sm text-foreground">
-                  <span className="truncate">{tag}</span>
-                </span>
-              </button>
-            );
-          })}
-          {hasFilters ? (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="inline-flex shrink-0 items-center gap-1 rounded-[3px] px-3 py-1 font-mono text-sm text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-            >
-              <X className="size-3.5" />
-              Clear
-            </button>
-          ) : null}
-        </div>
+        <TagBar
+          tags={allTags}
+          counts={tagCounts}
+          activeTag={activeTag}
+          showClear={hasFilters}
+          onSelect={setActiveTag}
+          onClear={clearFilters}
+        />
       ) : null}
 
-      <main className="library-canvas flex w-full flex-1 flex-col bg-[#1a1619] px-5 py-4 md:px-8">
+      <main className="library-canvas flex w-full flex-1 flex-col bg-[#1a1619] px-5 pb-28 pt-4 md:px-8 md:pb-4">
         {filtered.length === 0 ? (
           <div className="flex min-h-72 flex-1 flex-col items-center justify-center gap-2 text-center">
             <BookOpen className="size-9 text-primary" aria-hidden="true" />
@@ -439,11 +394,35 @@ export function HomeClient({
         ) : null}
       </MorphingModal>
 
+      {/* Mobile action dock — Add / Search / Sign out. Desktop keeps these
+          in the header; the dock hides at md+. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] md:hidden">
+        <Dock className="pointer-events-auto mb-4">
+          <DockItem
+            aria-label="Add bookmark"
+            onClick={() => setModal({ mode: "add" })}
+          >
+            <Plus className="size-5" />
+          </DockItem>
+          <DockItem
+            aria-label="Search bookmarks"
+            onClick={() => setPaletteOpen(true)}
+          >
+            <Search className="size-5" />
+          </DockItem>
+          <DockSeparator />
+          <DockItem aria-label="Sign out" onClick={() => void signOut()}>
+            <LogOut className="size-5" />
+          </DockItem>
+        </Dock>
+      </div>
+
       <AnimatedToastStack
         toasts={toasts}
         onDismiss={dismissToast}
         position="bottom-right"
         fixed
+        className="bottom-[calc(6rem_+_env(safe-area-inset-bottom))] md:bottom-6"
       />
     </div>
   );
