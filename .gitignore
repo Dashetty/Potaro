@@ -50,6 +50,9 @@ yarn-error.log*
 # local agent issue tracker (see docs/agents/issue-tracker.md)
 .scratch/
 
+# local agent animation plans (see plans/README.md)
+/plans/
+
 # vercel
 .vercel
 

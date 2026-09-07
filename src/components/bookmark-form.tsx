@@ -13,6 +13,7 @@ import { Loader } from "@/components/motion/loader";
 import { InlineTagInput } from "@/components/inline-tag-input";
 import { addBookmark, updateBookmark } from "@/app/bookmarks/actions";
 import { normalizeUrl } from "@/lib/queries";
+import { useTouchCapable } from "@/lib/hooks/use-touch-capable";
 import type { Bookmark } from "@/lib/types";
 import type { ToastStatus } from "@/components/motion/animated-toast-stack";
 
@@ -23,11 +24,7 @@ type BookmarkFormProps = {
   onClose: () => void;
   /** Called with the saved bookmark so the list can update optimistically. */
   onSaved: (bookmark: Bookmark) => void;
-  onToast: (
-    title: string,
-    description?: string,
-    status?: ToastStatus,
-  ) => void;
+  onToast: (title: string, description?: string, status?: ToastStatus) => void;
 };
 
 export function BookmarkForm({
@@ -49,6 +46,19 @@ export function BookmarkForm({
   const [saveState, setSaveState] = useState<ButtonState>("idle");
   const fetchedForUrl = useRef<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  const canTouch = useTouchCapable();
+
+  // Focus the URL field on open, but on touch wait out the drawer's 400ms
+  // entrance — focusing mid-slide makes the keyboard resize the visual
+  // viewport and stutter the panel.
+  useEffect(() => {
+    const timer = setTimeout(
+      () => urlInputRef.current?.focus(),
+      canTouch ? 450 : 0,
+    );
+    return () => clearTimeout(timer);
+  }, [canTouch]);
 
   useEffect(
     () => () => {
@@ -190,7 +200,7 @@ export function BookmarkForm({
             required
             error={urlError}
             leftIcon={<Link2 />}
-            autoFocus
+            ref={urlInputRef}
             rightIcon={
               metaLoading ? (
                 <Loader
@@ -244,8 +254,14 @@ export function BookmarkForm({
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="px-1 font-mono text-sm font-medium text-foreground">Tags</span>
-          <InlineTagInput value={tags} onChange={setTags} options={existingTags} />
+          <span className="px-1 font-mono text-sm font-medium text-foreground">
+            Tags
+          </span>
+          <InlineTagInput
+            value={tags}
+            onChange={setTags}
+            options={existingTags}
+          />
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, type ReactNode } from "react";
-import { EASE_OUT, SPRING_PANEL } from "@/lib/ease";
+import { EASE_DRAWER, EASE_OUT } from "@/lib/ease";
 import { PresenceGate } from "@/lib/presence-gate";
 import { cn } from "@/lib/utils";
 
@@ -84,11 +84,26 @@ export function Drawer({
               role="dialog"
               aria-modal="true"
               aria-label={ariaLabel}
-              initial={reduce ? { opacity: 0 } : { x: offscreen }}
-              animate={reduce ? { opacity: 1 } : { x: 0 }}
-              exit={reduce ? { opacity: 0 } : { x: offscreen }}
+              initial={
+                reduce
+                  ? { opacity: 0 }
+                  : { transform: `translateX(${offscreen})` }
+              }
+              animate={
+                reduce ? { opacity: 1 } : { transform: "translateX(0%)" }
+              }
+              exit={
+                reduce
+                  ? { opacity: 0 }
+                  : {
+                      transform: `translateX(${offscreen})`,
+                      transition: { duration: 0.3, ease: EASE_DRAWER },
+                    }
+              }
               transition={
-                reduce ? { duration: 0.2, ease: EASE_OUT } : SPRING_PANEL
+                reduce
+                  ? { duration: 0.2, ease: EASE_OUT }
+                  : { duration: 0.4, ease: EASE_DRAWER }
               }
               {...gate}
               className={cn(

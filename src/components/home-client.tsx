@@ -396,7 +396,7 @@ export function HomeClient({
       {/* Mobile action dock — Add / Search / Sign out. Desktop keeps these
           in the header; the dock hides at md+. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] md:hidden">
-        <Dock className="pointer-events-auto mb-4">
+        <Dock className="pointer-events-auto mb-4 border-0 bg-card/45 shadow-[0_0_0_1px_oklch(1_0_0_/_0.1),0_8px_32px_-8px_oklch(0_0_0_/_0.55),inset_0_1px_0_0_oklch(1_0_0_/_0.06)] backdrop-blur-2xl backdrop-saturate-150">
           <DockItem
             aria-label="Add bookmark"
             onClick={() => setModal({ mode: "add" })}
