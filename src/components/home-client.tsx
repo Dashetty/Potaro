@@ -172,7 +172,7 @@ export function HomeClient({
     <div className="page-shell flex w-full flex-col bg-background">
       <header className="relative z-10 px-5 pt-5 pb-3 md:px-8">
         <div className="grid grid-cols-2 items-center gap-x-3 gap-y-3 md:grid-cols-[1fr_minmax(12rem,28rem)_1fr]">
-          <span className="select-none justify-self-start font-display text-4xl leading-none tracking-tight text-white inline-block [translate-y_1px] md:text-5xl">
+          <span className="select-none col-span-2 justify-self-center font-display text-4xl leading-none tracking-tight text-white inline-block [translate-y_1px] md:col-span-1 md:justify-self-start md:text-5xl">
             Potaro
           </span>
 
@@ -203,12 +203,12 @@ export function HomeClient({
             />
           </div>
 
-          <div className="col-start-2 row-start-1 flex items-center justify-self-end gap-1.5 md:col-start-3">
+          <div className="hidden row-start-1 items-center justify-self-end gap-1.5 md:col-start-3 md:flex">
             <Button
               type="button"
               size="sm"
               onClick={() => setModal({ mode: "add" })}
-              className="hidden font-mono active:scale-[0.96] md:inline-flex"
+              className="font-mono active:scale-[0.96]"
             >
               <Plus className="size-4" />
               Add
@@ -221,7 +221,6 @@ export function HomeClient({
               variant="ghost"
               size="icon"
               aria-label="Sign out"
-              className="hidden md:inline-flex"
               onClick={() => {
                 void signOut();
               }}
