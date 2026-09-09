@@ -2,7 +2,13 @@
 // beui.dev/components/motion/dock
 
 import { motion, useReducedMotion } from "motion/react";
-import { createContext, useContext, useId, useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useId,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { SPRING_LAYOUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +92,11 @@ export function DockItem({
         className={cn(
           sharedClass,
           "cursor-pointer border-0 bg-transparent p-0 outline-none",
+          // Press feedback — the app-wide 0.96 press target as an
+          // interruptible CSS transition, skipped under reduced motion.
+          reduce
+            ? ""
+            : "transition-transform duration-150 ease-out active:scale-[0.96]",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         )}
       >

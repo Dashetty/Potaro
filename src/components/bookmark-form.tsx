@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { Input } from "@/components/motion/input";
 import {
   StatefulButton,
@@ -14,6 +15,7 @@ import { InlineTagInput } from "@/components/inline-tag-input";
 import { addBookmark, updateBookmark } from "@/app/bookmarks/actions";
 import { normalizeUrl } from "@/lib/queries";
 import { useTouchCapable } from "@/lib/hooks/use-touch-capable";
+import { useEntrance } from "@/lib/hooks/use-entrance";
 import type { Bookmark } from "@/lib/types";
 import type { ToastStatus } from "@/components/motion/animated-toast-stack";
 
@@ -59,6 +61,12 @@ export function BookmarkForm({
     );
     return () => clearTimeout(timer);
   }, [canTouch]);
+
+  const entrance = useEntrance();
+
+  // Staggered interior: sections 30ms apart, everything settled (~430ms)
+  // before the touch focus lands at 450ms. Never blocks interaction;
+  // reduced motion skips the stagger entirely.
 
   useEffect(
     () => () => {
@@ -173,18 +181,21 @@ export function BookmarkForm({
   return (
     <form onSubmit={handleSave} className="flex h-full flex-col">
       {/* Drawer header — fixed at the top */}
-      <header className="shrink-0 border-b border-border px-5 pb-4 pt-5">
+      <motion.header
+        {...entrance(0)}
+        className="shrink-0 border-b border-border px-5 pb-4 pt-5"
+      >
         <h2 className="font-mono text-[20px] leading-[140%] font-semibold tracking-[-0.5px] text-foreground">
           {mode === "edit" ? "Edit bookmark" : "Add bookmark"}
         </h2>
         <p className="mt-1 font-mono text-sm leading-[142.857%] text-muted-foreground">
           Paste a URL and we&apos;ll pull the details.
         </p>
-      </header>
+      </motion.header>
 
       {/* Scrollable fields between header and footer */}
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-5 py-4">
-        <div>
+        <motion.div {...entrance(0.03)}>
           <Input
             label="URL"
             type="url"
@@ -219,41 +230,47 @@ export function BookmarkForm({
               rightIcon: "pr-2",
             }}
           />
-        </div>
+        </motion.div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => void fetchMeta(url)}
-          className="self-end -mt-2 font-mono"
-        >
-          <RefreshCw className="size-3.5" />
-          Fetch details
-        </Button>
+        <motion.div {...entrance(0.03)} className="self-end -mt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void fetchMeta(url)}
+            className="font-mono"
+          >
+            <RefreshCw className="size-3.5" />
+            Fetch details
+          </Button>
+        </motion.div>
 
-        <Input
-          label="Title"
-          value={title}
-          onChange={setTitle}
-          placeholder="Page title"
-          classNames={{
-            label: "font-mono",
-            input: "font-mono font-light leading-5",
-          }}
-        />
-        <Input
-          label="Description"
-          value={description}
-          onChange={setDescription}
-          placeholder="A short note"
-          classNames={{
-            label: "font-mono",
-            input: "font-mono font-light leading-5",
-          }}
-        />
+        <motion.div {...entrance(0.06)}>
+          <Input
+            label="Title"
+            value={title}
+            onChange={setTitle}
+            placeholder="Page title"
+            classNames={{
+              label: "font-mono",
+              input: "font-mono font-light leading-5",
+            }}
+          />
+        </motion.div>
+        <motion.div {...entrance(0.09)}>
+          <Input
+            label="Description"
+            value={description}
+            onChange={setDescription}
+            placeholder="A short note"
+            classNames={{
+              label: "font-mono",
+              input: "font-mono font-light leading-5",
+            }}
+          />
+        </motion.div>
 
-        <div className="flex flex-col gap-1.5">
+        <motion.div {...entrance(0.12)} className="flex flex-col gap-1.5">
           <span className="px-1 font-mono text-sm font-medium text-foreground">
             Tags
           </span>
@@ -262,11 +279,14 @@ export function BookmarkForm({
             onChange={setTags}
             options={existingTags}
           />
-        </div>
+        </motion.div>
       </div>
 
       {/* Sticky footer with Cancel + Save */}
-      <footer className="shrink-0 border-t border-border px-5 py-4">
+      <motion.footer
+        {...entrance(0.15)}
+        className="shrink-0 border-t border-border px-5 py-4"
+      >
         <div className="flex gap-2">
           <StatefulButton
             type="submit"
@@ -288,7 +308,7 @@ export function BookmarkForm({
             Cancel
           </Button>
         </div>
-      </footer>
+      </motion.footer>
     </form>
   );
 }

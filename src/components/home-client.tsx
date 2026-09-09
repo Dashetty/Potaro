@@ -23,6 +23,7 @@ import { BookmarkCard } from "@/components/bookmark-card";
 import { BookmarkForm } from "@/components/bookmark-form";
 import { deleteBookmark } from "@/app/bookmarks/actions";
 import { signOut } from "@/app/auth/actions";
+import { useEntrance } from "@/lib/hooks/use-entrance";
 import { domainOf } from "@/lib/format";
 import type { Bookmark } from "@/lib/types";
 
@@ -43,6 +44,7 @@ export function HomeClient({
 }: HomeClientProps) {
   const router = useRouter();
   const { toasts, showToast, dismissToast } = useAnimatedToastStack();
+  const entrance = useEntrance();
 
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks);
   const [searchQuery, setSearchQuery] = useState("");
@@ -248,8 +250,14 @@ export function HomeClient({
       ) : null}
 
       <main className="library-canvas flex w-full flex-1 flex-col bg-[#1a1619] px-5 pb-28 pt-4 md:px-8 md:pb-4">
+        {/* Entrance fade only — the reverse swap is carried by the cards'
+            own exit animations; a serialized exit here would lag live
+            search behind every keystroke. */}
         {filtered.length === 0 ? (
-          <div className="flex min-h-72 flex-1 flex-col items-center justify-center gap-2 text-center">
+          <motion.div
+            {...entrance(0, 12)}
+            className="flex min-h-72 flex-1 flex-col items-center justify-center gap-2 text-center"
+          >
             <BookOpen className="size-9 text-primary" aria-hidden="true" />
             {bookmarks.length === 0 ? (
               <>
@@ -284,7 +292,7 @@ export function HomeClient({
                 </Button>
               </>
             )}
-          </div>
+          </motion.div>
         ) : (
           <>
             <motion.div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">

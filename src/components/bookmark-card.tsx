@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { useEntrance } from "@/lib/hooks/use-entrance";
 import { ExternalLink, Globe, Pencil, Trash2 } from "lucide-react";
 import {
   ContextMenu,
@@ -30,10 +31,10 @@ export function BookmarkCard({
 }: BookmarkCardProps) {
   const [faviconFailed, setFaviconFailed] = useState(false);
   const reduce = useReducedMotion();
+  const entrance = useEntrance();
   const title = bookmark.title || bookmark.url;
 
-  const open = () =>
-    window.open(bookmark.url, "_blank", "noopener,noreferrer");
+  const open = () => window.open(bookmark.url, "_blank", "noopener,noreferrer");
 
   const cardBody = (
     <motion.div
@@ -44,10 +45,12 @@ export function BookmarkCard({
       onKeyDown={(event) => {
         if (event.key === "Enter") open();
       }}
-      initial={reduce ? { opacity: 1 } : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
-      transition={reduce ? { duration: 0 } : { duration: 0.28, ease: "easeOut" }}
+      {...entrance(0, 8)}
+      exit={
+        reduce
+          ? { opacity: 0 }
+          : { opacity: 0, transform: "translateY(-6px) scale(0.98)" }
+      }
       className="group h-full cursor-pointer rounded-[5px] border border-border bg-card p-3 outline-none transition-[border-color] duration-200 hover:border-white/15 focus-visible:border-primary/50"
     >
       <div className="flex items-center gap-2.5">
