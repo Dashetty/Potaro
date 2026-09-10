@@ -37,21 +37,18 @@ export function BookmarkCard({
   const open = () => window.open(bookmark.url, "_blank", "noopener,noreferrer");
 
   const cardBody = (
-    <motion.div
-      role="link"
-      tabIndex={0}
+    <motion.a
+      href={bookmark.url}
+      target="_blank"
+      rel="noopener noreferrer"
       aria-label={title}
-      onClick={open}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") open();
-      }}
       {...entrance(0, 8)}
       exit={
         reduce
           ? { opacity: 0 }
           : { opacity: 0, transform: "translateY(-6px) scale(0.98)" }
       }
-      className="group h-full cursor-pointer rounded-[5px] border border-border bg-card p-3 outline-none transition-[border-color] duration-200 hover:border-white/15 focus-visible:border-primary/50"
+      className="group block h-full cursor-pointer rounded-[5px] border border-border bg-card p-3 outline-none transition-[border-color] duration-200 hover:border-white/15 focus-visible:border-primary/50"
     >
       <div className="flex items-center gap-2.5">
         <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-white/5 text-primary">
@@ -97,6 +94,7 @@ export function BookmarkCard({
             aria-label={`Edit ${title}`}
             className="h-10 w-10"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onEdit(bookmark);
             }}
@@ -110,6 +108,7 @@ export function BookmarkCard({
             aria-label={`Delete ${title}`}
             className="h-10 w-10"
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               onDelete(bookmark);
             }}
@@ -127,6 +126,7 @@ export function BookmarkCard({
               key={tag}
               type="button"
               onClick={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
                 onTagClick(tag);
               }}
@@ -137,7 +137,7 @@ export function BookmarkCard({
           ))}
         </div>
       ) : null}
-    </motion.div>
+    </motion.a>
   );
 
   return (
