@@ -8,7 +8,7 @@
    #2d0a1e Black Cherry   page background
    #5c1a3b Soul Anchor    cards, elevated surfaces, sidebar
    #8b2a5c Pink Horror    borders, dividers, hover states
-   #cc007a Razzle Dazzle  primary buttons, active states, tag pills, links, icons
+   #cc007a Razzle Dazzle  primary buttons, active states, tag pills, links, icons, success toasts
    #d66b9a Preppy Rose    primary text, accent highlights, selected states
    Accessibility: #d66b9a is primary text on #2d0a1e/#5c1a3b.
    Secondary text (#cc007a) must be bold, min 14px — never smaller.
@@ -21,7 +21,7 @@
   --color-pink-horror: oklch(0.4479 0.1404 352.52);
   --color-razzle-dazzle: oklch(0.552 0.227 354.45);
   --color-preppy-rose: oklch(0.6662 0.1437 354.05);
-  --color-pop: oklch(0.75 0.131 82); /* #d7a53e gold — success toasts only */
+  --color-pop: oklch(0.552 0.227 354.45); /* #cc007a razzle-dazzle — success toasts use the primary pink */
   /* Base sans stack; mono + display are defined via next/font vars in @theme inline. */
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
@@ -90,11 +90,10 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ── Palette: minimal dark + burgundy primary + gold success pop ──────
+/* ── Palette: minimal dark + burgundy primary ─────────────────────────
    Surfaces are warm neutral darks; #cc007a (burgundy) is the single accent
    used for interactive/emphatic elements (buttons, links, active states,
-   focus rings, icons). #d7a53e gold is reserved for success feedback only
-   (restraint rule: never on surfaces, borders, or hover states).
+   focus rings, icons, and success feedback).
    Every text pairing passes WCAG AA. */
 
 /* Dark-only: tokens live on :root so the app is always dark. */

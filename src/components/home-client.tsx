@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BookOpen, Globe, LogOut, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/motion/input";
 import { Button } from "@/components/motion/button/base";
@@ -16,15 +16,17 @@ import { Dock, DockItem, DockSeparator } from "@/components/motion/dock";
 import {
   AnimatedToastStack,
   useAnimatedToastStack,
+  type ToastStatus,
 } from "@/components/motion/animated-toast-stack";
 import { TagBar } from "@/components/tag-bar";
 import { CommandPalette } from "@/components/motion/command-palette";
 import { BookmarkCard } from "@/components/bookmark-card";
 import { BookmarkForm } from "@/components/bookmark-form";
-import { deleteBookmark } from "@/app/bookmarks/actions";
+import { deleteBookmark, restoreBookmark } from "@/app/bookmarks/actions";
 import { signOut } from "@/app/auth/actions";
 import { useEntrance } from "@/lib/hooks/use-entrance";
 import { domainOf } from "@/lib/format";
+import { compareNewestFirst } from "@/lib/queries";
 import type { Bookmark } from "@/lib/types";
 
 type HomeClientProps = {
@@ -43,15 +45,46 @@ export function HomeClient({
   existingTags,
 }: HomeClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toasts, showToast, dismissToast } = useAnimatedToastStack();
   const entrance = useEntrance();
 
+  // Shared adapter for children that report via the (title, description,
+  // status) callback shape.
+  const pushToast = useCallback(
+    (title: string, description?: string, status?: ToastStatus) =>
+      showToast({ title, description, status }),
+    [showToast],
+  );
+
+  // Filters seed from the URL so any view is deep-linkable (?q=&tag=).
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") ?? "",
+  );
+  const [activeTag, setActiveTag] = useState<string | null>(() =>
+    searchParams.get("tag"),
+  );
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [deleteState, setDeleteState] = useState<ButtonState>("idle");
+  const restoringIds = useRef(new Set<string>());
+
+  // Keep the URL in step with the filters. replaceState avoids both history
+  // spam per keystroke and a server round-trip; nothing reads the URL back
+  // after mount, so there is no update loop.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    const query = searchQuery.trim();
+    if (query) params.set("q", query);
+    if (activeTag) params.set("tag", activeTag);
+    const queryString = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      queryString ? `/?${queryString}` : window.location.pathname,
+    );
+  }, [searchQuery, activeTag]);
 
   // Latest UI state for the global ⌘N handler, so it never opens the drawer
   // over an open modal or palette.
@@ -101,6 +134,8 @@ export function HomeClient({
       return (
         bookmark.title.toLocaleLowerCase().includes(normalizedQuery) ||
         bookmark.url.toLocaleLowerCase().includes(normalizedQuery) ||
+        (bookmark.description?.toLocaleLowerCase().includes(normalizedQuery) ??
+          false) ||
         bookmark.tags.some((tag) =>
           tag.toLocaleLowerCase().includes(normalizedQuery),
         )
@@ -127,17 +162,25 @@ export function HomeClient({
 
   const handleDelete = async () => {
     if (!modal || modal.mode !== "delete") return;
+    const deleted = modal.bookmark;
     setDeleteState("loading");
-    const result = await deleteBookmark(modal.bookmark.id);
+    const result = await deleteBookmark(deleted.id);
     if (result.ok) {
       setDeleteState("success");
       setBookmarks((current) =>
-        current.filter((b) => b.id !== modal.bookmark.id),
+        current.filter((b) => b.id !== deleted.id),
       );
       showToast({
         title: "Bookmark deleted",
-        description: modal.bookmark.title,
+        description: deleted.title,
         status: "success",
+        action: {
+          label: "Undo",
+          onClick: (toast) => {
+            dismissToast(toast.id);
+            void undoDelete(deleted);
+          },
+        },
       });
       router.refresh();
       setTimeout(() => {
@@ -155,6 +198,29 @@ export function HomeClient({
     }
   };
 
+  const undoDelete = async (deleted: Bookmark) => {
+    if (restoringIds.current.has(deleted.id)) return;
+    restoringIds.current.add(deleted.id);
+    const result = await restoreBookmark(deleted);
+    restoringIds.current.delete(deleted.id);
+    if (result.ok) {
+      // Restore in place: the library is ordered newest-first.
+      setBookmarks((current) => [...current, deleted].sort(compareNewestFirst));
+      showToast({
+        title: "Bookmark restored",
+        description: deleted.title,
+        status: "success",
+      });
+      router.refresh();
+    } else {
+      showToast({
+        title: "Couldn't restore bookmark",
+        description: result.error,
+        status: "error",
+      });
+    }
+  };
+
   const paletteItems = useMemo(
     () =>
       bookmarks.map((bookmark) => ({
@@ -162,7 +228,11 @@ export function HomeClient({
         label: bookmark.title || bookmark.url,
         group: domainOf(bookmark.url),
         hint: bookmark.url,
-        keywords: [bookmark.url, ...bookmark.tags],
+        keywords: [
+          bookmark.url,
+          ...(bookmark.description ? [bookmark.description] : []),
+          ...bookmark.tags,
+        ],
         icon: Globe,
         onSelect: () =>
           window.open(bookmark.url, "_blank", "noopener,noreferrer"),
@@ -182,7 +252,7 @@ export function HomeClient({
             <Input
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search title, URL, tags…"
+              placeholder="Search title, URL, description, tags…"
               aria-label="Search bookmarks"
               leftIcon={<Search />}
               classNames={{
@@ -304,6 +374,7 @@ export function HomeClient({
                     onEdit={(b) => setModal({ mode: "edit", bookmark: b })}
                     onDelete={(b) => setModal({ mode: "delete", bookmark: b })}
                     onTagClick={setActiveTag}
+                    onToast={pushToast}
                   />
                 ))}
               </AnimatePresence>
@@ -335,24 +406,28 @@ export function HomeClient({
         {modal?.mode === "add" ? (
           <BookmarkForm
             mode="add"
+            bookmarks={bookmarks}
             existingTags={existingTags}
             onClose={() => setModal(null)}
             onSaved={addLocal}
-            onToast={(title, description, status) =>
-              showToast({ title, description, status })
+            onRequestEdit={(bookmark) =>
+              setModal({ mode: "edit", bookmark })
             }
+            onToast={pushToast}
           />
         ) : null}
         {modal?.mode === "edit" ? (
           <BookmarkForm
             mode="edit"
             initial={modal.bookmark}
+            bookmarks={bookmarks}
             existingTags={existingTags}
             onClose={() => setModal(null)}
             onSaved={updateLocal}
-            onToast={(title, description, status) =>
-              showToast({ title, description, status })
+            onRequestEdit={(bookmark) =>
+              setModal({ mode: "edit", bookmark })
             }
+            onToast={pushToast}
           />
         ) : null}
       </Drawer>
@@ -374,7 +449,7 @@ export function HomeClient({
               </h2>
               <p className="mt-1 font-mono text-sm leading-6 text-muted-foreground">
                 “{modal.bookmark.title || modal.bookmark.url}” will be
-                permanently removed. This can&apos;t be undone.
+                removed. You can undo for a few seconds afterwards.
               </p>
             </div>
             <div className="flex gap-2">

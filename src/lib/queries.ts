@@ -37,3 +37,13 @@ export function normalizeUrl(raw: string): string {
     ? candidate
     : `https://${candidate}`;
 }
+
+/** Loose key for comparing saved URLs: lowercase, no trailing slashes. */
+export function urlKey(raw: string): string {
+  return normalizeUrl(raw).toLowerCase().replace(/\/+$/, "");
+}
+
+/** Newest-first ordering shared by the library list and optimistic updates. */
+export function compareNewestFirst(a: Bookmark, b: Bookmark): number {
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+}

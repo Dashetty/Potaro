@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -13,7 +13,7 @@ import { Button } from "@/components/motion/button/base";
 import { Loader } from "@/components/motion/loader";
 import { InlineTagInput } from "@/components/inline-tag-input";
 import { addBookmark, updateBookmark } from "@/app/bookmarks/actions";
-import { normalizeUrl } from "@/lib/queries";
+import { normalizeUrl, urlKey } from "@/lib/queries";
 import { useTouchCapable } from "@/lib/hooks/use-touch-capable";
 import { useEntrance } from "@/lib/hooks/use-entrance";
 import type { Bookmark } from "@/lib/types";
@@ -22,19 +22,25 @@ import type { ToastStatus } from "@/components/motion/animated-toast-stack";
 type BookmarkFormProps = {
   mode: "add" | "edit";
   initial?: Bookmark;
+  /** The current library, for the duplicate-URL warning. */
+  bookmarks: Bookmark[];
   existingTags: string[];
   onClose: () => void;
   /** Called with the saved bookmark so the list can update optimistically. */
   onSaved: (bookmark: Bookmark) => void;
+  /** Switch the drawer to edit another bookmark (duplicate hint). */
+  onRequestEdit: (bookmark: Bookmark) => void;
   onToast: (title: string, description?: string, status?: ToastStatus) => void;
 };
 
 export function BookmarkForm({
   mode,
   initial,
+  bookmarks,
   existingTags,
   onClose,
   onSaved,
+  onRequestEdit,
   onToast,
 }: BookmarkFormProps) {
   const router = useRouter();
@@ -63,6 +69,16 @@ export function BookmarkForm({
   }, [canTouch]);
 
   const entrance = useEntrance();
+
+  // Flag a URL the library already has (ignoring the bookmark being edited)
+  // so the user finds out before hitting the server's unique constraint.
+  const duplicate = useMemo(() => {
+    const key = urlKey(url);
+    if (!key) return undefined;
+    return bookmarks.find(
+      (bookmark) => bookmark.id !== initial?.id && urlKey(bookmark.url) === key,
+    );
+  }, [bookmarks, url, initial?.id]);
 
   // Staggered interior: sections 30ms apart, everything settled (~430ms)
   // before the touch focus lands at 450ms. Never blocks interaction;
@@ -230,6 +246,19 @@ export function BookmarkForm({
               rightIcon: "pr-2",
             }}
           />
+          {duplicate ? (
+            <p className="px-1 font-mono text-xs leading-5 text-muted-foreground">
+              Already saved{duplicate.title ? ` as “${duplicate.title}”` : ""}{" "}
+              —{" "}
+              <button
+                type="button"
+                onClick={() => onRequestEdit(duplicate)}
+                className="font-bold text-preppy-rose underline-offset-2 hover:underline"
+              >
+                edit it
+              </button>
+            </p>
+          ) : null}
         </motion.div>
 
         <motion.div {...entrance(0.03)} className="self-end -mt-2">

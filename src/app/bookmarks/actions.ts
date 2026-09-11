@@ -3,13 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeUrl } from "@/lib/queries";
-import type { BookmarkInput } from "@/lib/types";
+import type { Bookmark, BookmarkInput } from "@/lib/types";
 
 export type ActionResult = { ok: boolean; error?: string; id?: string };
 
 function cleanTags(tags: string[] | undefined): string[] {
   if (!tags) return [];
   return [...new Set(tags.map((t) => t.trim()).filter(Boolean))];
+}
+
+/** Map the Postgres unique-violation code to the action's conflict message. */
+function urlConflict(
+  error: { code?: string | null },
+  message: string,
+): ActionResult | null {
+  return error.code === "23505" ? { ok: false, error: message } : null;
 }
 
 export async function addBookmark(
@@ -35,10 +43,12 @@ export async function addBookmark(
     .single();
 
   if (error) {
-    if (error.code === "23505") {
-      return { ok: false, error: "That URL is already saved." };
-    }
-    return { ok: false, error: error.message };
+    return (
+      urlConflict(error, "That URL is already saved.") ?? {
+        ok: false,
+        error: error.message,
+      }
+    );
   }
 
   revalidatePath("/");
@@ -68,10 +78,12 @@ export async function updateBookmark(
     .eq("id", id);
 
   if (error) {
-    if (error.code === "23505") {
-      return { ok: false, error: "Another bookmark already uses that URL." };
-    }
-    return { ok: false, error: error.message };
+    return (
+      urlConflict(error, "Another bookmark already uses that URL.") ?? {
+        ok: false,
+        error: error.message,
+      }
+    );
   }
 
   revalidatePath("/");
@@ -89,4 +101,38 @@ export async function deleteBookmark(id: string): Promise<ActionResult> {
 
   revalidatePath("/");
   return { ok: true };
+}
+
+/** Re-insert a deleted bookmark with its original id and created_at (Undo). */
+export async function restoreBookmark(
+  bookmark: Bookmark,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const url = normalizeUrl(bookmark.url);
+
+  if (!url) {
+    return { ok: false, error: "A URL is required." };
+  }
+
+  const { error } = await supabase.from("bookmarks").insert({
+    id: bookmark.id,
+    url,
+    title: bookmark.title,
+    description: bookmark.description,
+    favicon_url: bookmark.favicon_url,
+    tags: cleanTags(bookmark.tags),
+    created_at: bookmark.created_at,
+  });
+
+  if (error) {
+    return (
+      urlConflict(error, "That URL is already saved.") ?? {
+        ok: false,
+        error: error.message,
+      }
+    );
+  }
+
+  revalidatePath("/");
+  return { ok: true, id: bookmark.id };
 }

@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { useEntrance } from "@/lib/hooks/use-entrance";
-import { ExternalLink, Globe, Pencil, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Globe, Pencil, Trash2 } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -13,7 +13,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/motion/context-menu";
 import { Button } from "@/components/motion/button/base";
-import { formatRelativeTime } from "@/lib/format";
+import { domainOf, formatRelativeTime } from "@/lib/format";
+import type { ToastStatus } from "@/components/motion/animated-toast-stack";
 import type { Bookmark } from "@/lib/types";
 
 type BookmarkCardProps = {
@@ -21,6 +22,7 @@ type BookmarkCardProps = {
   onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
   onTagClick: (tag: string) => void;
+  onToast: (title: string, description?: string, status?: ToastStatus) => void;
 };
 
 export function BookmarkCard({
@@ -28,6 +30,7 @@ export function BookmarkCard({
   onEdit,
   onDelete,
   onTagClick,
+  onToast,
 }: BookmarkCardProps) {
   const [faviconFailed, setFaviconFailed] = useState(false);
   const reduce = useReducedMotion();
@@ -35,6 +38,13 @@ export function BookmarkCard({
   const title = bookmark.title || bookmark.url;
 
   const open = () => window.open(bookmark.url, "_blank", "noopener,noreferrer");
+
+  const copyUrl = () => {
+    void navigator.clipboard
+      .writeText(bookmark.url)
+      .then(() => onToast("URL copied", domainOf(bookmark.url), "success"))
+      .catch(() => onToast("Couldn't copy URL", undefined, "error"));
+  };
 
   const cardBody = (
     <motion.a
@@ -150,6 +160,10 @@ export function BookmarkCard({
         <ContextMenuItem onSelect={open}>
           <ExternalLink className="size-4" />
           Open in new tab
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={copyUrl}>
+          <Copy className="size-4" />
+          Copy URL
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => onEdit(bookmark)}>
           <Pencil className="size-4" />
