@@ -105,7 +105,7 @@ export function TagBar({
               onClick={() => onSelect(selected ? null : tag)}
               aria-pressed={selected}
               className={
-                "relative flex h-7 max-w-full shrink-0 items-stretch rounded-[3px] border font-mono transition-[color,background-color,border-color,scale] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] active:scale-[0.96] " +
+                "relative flex h-7 max-w-full shrink-0 items-stretch rounded-[3px] border font-mono outline-none transition-[color,background-color,border-color,scale] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-ring " +
                 (selected
                   ? "border-primary bg-primary"
                   : "border-white/10 bg-white/5 hover:bg-white/10")
@@ -136,7 +136,7 @@ export function TagBar({
           <button
             type="button"
             onClick={onClear}
-            className="relative inline-flex shrink-0 items-center gap-1 rounded-[3px] px-3 py-1 font-mono text-sm text-muted-foreground transition-[color,background-color,scale] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] active:scale-[0.96] hover:bg-white/10 hover:text-foreground"
+            className="relative inline-flex shrink-0 items-center gap-1 rounded-[3px] px-3 py-1 font-mono text-sm text-muted-foreground outline-none transition-[color,background-color,scale] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-ring hover:bg-white/10 hover:text-foreground"
           >
             <X className="size-3.5" />
             Clear

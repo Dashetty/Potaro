@@ -2,7 +2,6 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { useEntrance } from "@/lib/hooks/use-entrance";
 import { Copy, ExternalLink, Globe, Pencil, Trash2 } from "lucide-react";
 import {
   ContextMenu,
@@ -13,6 +12,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/motion/context-menu";
 import { Button } from "@/components/motion/button/base";
+import { EASE_OUT } from "@/lib/ease";
 import { domainOf, formatRelativeTime } from "@/lib/format";
 import type { ToastStatus } from "@/components/motion/animated-toast-stack";
 import type { Bookmark } from "@/lib/types";
@@ -34,7 +34,6 @@ export function BookmarkCard({
 }: BookmarkCardProps) {
   const [faviconFailed, setFaviconFailed] = useState(false);
   const reduce = useReducedMotion();
-  const entrance = useEntrance();
   const title = bookmark.title || bookmark.url;
 
   const open = () => window.open(bookmark.url, "_blank", "noopener,noreferrer");
@@ -52,7 +51,13 @@ export function BookmarkCard({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={title}
-      {...entrance(0, 8)}
+      initial={reduce ? false : { opacity: 0, transform: "translateY(6px)" }}
+      animate={
+        reduce ? { opacity: 1 } : { opacity: 1, transform: "translateY(0px)" }
+      }
+      transition={
+        reduce ? { duration: 0 } : { duration: 0.28, ease: EASE_OUT }
+      }
       exit={
         reduce
           ? { opacity: 0 }

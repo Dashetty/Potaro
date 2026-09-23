@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookOpen, Globe, LogOut, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/motion/input";
@@ -25,6 +25,7 @@ import { BookmarkForm } from "@/components/bookmark-form";
 import { deleteBookmark, restoreBookmark } from "@/app/bookmarks/actions";
 import { signOut } from "@/app/auth/actions";
 import { useEntrance } from "@/lib/hooks/use-entrance";
+import { EASE_OUT } from "@/lib/ease";
 import { domainOf } from "@/lib/format";
 import { compareNewestFirst } from "@/lib/queries";
 import type { Bookmark } from "@/lib/types";
@@ -48,6 +49,7 @@ export function HomeClient({
   const searchParams = useSearchParams();
   const { toasts, showToast, dismissToast } = useAnimatedToastStack();
   const entrance = useEntrance();
+  const reduce = useReducedMotion();
 
   // Shared adapter for children that report via the (title, description,
   // status) callback shape.
@@ -320,14 +322,18 @@ export function HomeClient({
       ) : null}
 
       <main className="library-canvas flex w-full flex-1 flex-col bg-[#1a1619] px-5 pb-28 pt-4 md:px-8 md:pb-4">
-        {/* Entrance fade only — the reverse swap is carried by the cards'
-            own exit animations; a serialized exit here would lag live
-            search behind every keystroke. */}
-        {filtered.length === 0 ? (
-          <motion.div
-            {...entrance(0, 12)}
-            className="flex min-h-72 flex-1 flex-col items-center justify-center gap-2 text-center"
-          >
+        {/* Filter swaps are container crossfades keyed by the filter state,
+            not per-card exits: live search keeps its key while typing (no
+            serialization lag), while a tag click remounts and crossfades.
+            Opacity only — per-card entrances carry the positional motion, so
+            there is never more than one movement on the same pixels. */}
+        <AnimatePresence initial={false} mode="wait">
+          {filtered.length === 0 ? (
+            <motion.div
+              key="empty"
+              {...entrance(0, 12)}
+              className="flex min-h-72 flex-1 flex-col items-center justify-center gap-2 text-center"
+            >
             <BookOpen className="size-9 text-primary" aria-hidden="true" />
             {bookmarks.length === 0 ? (
               <>
@@ -363,9 +369,20 @@ export function HomeClient({
               </>
             )}
           </motion.div>
-        ) : (
-          <>
-            <motion.div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+          ) : (
+            <motion.div
+              key={
+                (activeTag ?? "all") + "|" + (searchQuery.trim() ? "q" : "all")
+              }
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16, ease: EASE_OUT }}
+              className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3"
+            >
+              {/* Card-level exits fire only when the container itself stays
+                  mounted (e.g. a delete); a filter swap unmounts the whole
+                  container, so the crossfade carries the cards instead. */}
               <AnimatePresence initial={false} mode="popLayout">
                 {filtered.map((bookmark) => (
                   <BookmarkCard
@@ -379,11 +396,8 @@ export function HomeClient({
                 ))}
               </AnimatePresence>
             </motion.div>
-            <p className="mx-auto w-full max-w-[38rem] py-5 text-center font-mono text-xs text-muted-foreground">
-              You&apos;ve reached the end of your library
-            </p>
-          </>
-        )}
+          )}
+        </AnimatePresence>
       </main>
 
       {/* ⌘K palette */}
