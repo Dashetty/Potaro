@@ -38,9 +38,48 @@ export function normalizeUrl(raw: string): string {
     : `https://${candidate}`;
 }
 
-/** Loose key for comparing saved URLs: lowercase, no trailing slashes. */
+/** Query params that never change what a page is — tracking/campaign junk. */
+const TRACKING_PARAMS = new Set([
+  "fbclid",
+  "gclid",
+  "igshid",
+  "mc_eid",
+  "ref",
+  "ref_src",
+  "ref_url",
+  "si",
+  "utm_campaign",
+  "utm_content",
+  "utm_id",
+  "utm_medium",
+  "utm_source",
+  "utm_term",
+]);
+
+/**
+ * Loose key for comparing saved URLs: lowercase host/path, tracking params
+ * and #hash stripped, no trailing slashes. Two keys match when they'd land
+ * on the same page in a browser.
+ */
 export function urlKey(raw: string): string {
-  return normalizeUrl(raw).toLowerCase().replace(/\/+$/, "");
+  const normalized = normalizeUrl(raw);
+  try {
+    const parsed = new URL(normalized);
+    for (const key of [...parsed.searchParams.keys()]) {
+      if (TRACKING_PARAMS.has(key.toLowerCase())) {
+        parsed.searchParams.delete(key);
+      }
+    }
+    parsed.hash = "";
+    const path =
+      parsed.pathname.length > 1
+        ? parsed.pathname.replace(/\/+$/, "")
+        : parsed.pathname;
+    return `${parsed.host}${path}${parsed.search}`.toLowerCase();
+  } catch {
+    // Unparseable input: fall back to a case-folded, slash-trimmed string.
+    return normalized.toLowerCase().replace(/\/+$/, "");
+  }
 }
 
 /** Newest-first ordering shared by the library list and optimistic updates. */

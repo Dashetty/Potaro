@@ -105,16 +105,28 @@ export function TagBar({
               onClick={() => onSelect(selected ? null : tag)}
               aria-pressed={selected}
               className={
-                "flex h-7 max-w-full shrink-0 items-stretch overflow-hidden rounded-[3px] border font-mono transition-colors " +
+                "relative flex h-7 max-w-full shrink-0 items-stretch rounded-[3px] border font-mono transition-[color,background-color,border-color,scale] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] active:scale-[0.96] " +
                 (selected
-                  ? "border-white/15 bg-white/10"
+                  ? "border-primary bg-primary"
                   : "border-white/10 bg-white/5 hover:bg-white/10")
               }
             >
-              <span className="grid w-[25px] shrink-0 place-items-center rounded-l-xs rounded-br-md bg-primary text-xs text-primary-foreground tabular-nums">
+              <span
+                className={
+                  "grid w-[25px] shrink-0 place-items-center rounded-l-xs rounded-br-md text-xs tabular-nums " +
+                  (selected
+                    ? "bg-black-cherry/40 text-primary-foreground"
+                    : "bg-primary text-primary-foreground")
+                }
+              >
                 {count}
               </span>
-              <span className="flex min-w-0 items-center px-2.5 text-sm text-foreground">
+              <span
+                className={
+                  "flex min-w-0 items-center px-2.5 text-sm " +
+                  (selected ? "text-primary-foreground" : "text-foreground")
+                }
+              >
                 <span className="truncate">{tag}</span>
               </span>
             </button>
@@ -124,7 +136,7 @@ export function TagBar({
           <button
             type="button"
             onClick={onClear}
-            className="inline-flex shrink-0 items-center gap-1 rounded-[3px] px-3 py-1 font-mono text-sm text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+            className="relative inline-flex shrink-0 items-center gap-1 rounded-[3px] px-3 py-1 font-mono text-sm text-muted-foreground transition-[color,background-color,scale] duration-150 ease-out before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] active:scale-[0.96] hover:bg-white/10 hover:text-foreground"
           >
             <X className="size-3.5" />
             Clear

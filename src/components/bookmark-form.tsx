@@ -137,6 +137,10 @@ export function BookmarkForm({
       return;
     }
     setUrlError(undefined);
+    // A duplicate would only fail at the database's unique constraint, after
+    // the toast + refresh have already fired, so stop here and keep the
+    // “Already saved as …” hint on screen for the user to act on.
+    if (duplicate) return;
     setSaveState("loading");
 
     const result =
