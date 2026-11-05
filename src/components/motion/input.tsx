@@ -9,7 +9,6 @@ import {
 import { EASE_OUT } from "@/lib/ease";
 import {
   forwardRef,
-  useEffect,
   useId,
   useRef,
   useState,

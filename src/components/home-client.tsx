@@ -28,6 +28,7 @@ import { useEntrance } from "@/lib/hooks/use-entrance";
 import { EASE_OUT } from "@/lib/ease";
 import { domainOf } from "@/lib/format";
 import { compareNewestFirst } from "@/lib/queries";
+import { clearCachedPages } from "@/lib/pwa";
 import type { Bookmark } from "@/lib/types";
 
 type HomeClientProps = {
@@ -296,6 +297,7 @@ export function HomeClient({
               size="icon"
               aria-label="Sign out"
               onClick={() => {
+                clearCachedPages();
                 void signOut();
               }}
             >
@@ -507,7 +509,15 @@ export function HomeClient({
             <Search className="size-5" />
           </DockItem>
           <DockSeparator />
-          <DockItem aria-label="Sign out" onClick={() => void signOut()}>
+          <DockItem
+            aria-label="Sign out"
+            onClick={() => {
+              // Drop the cached authenticated document before the session
+              // ends, so bookmarks don't linger in Cache Storage.
+              clearCachedPages();
+              void signOut();
+            }}
+          >
             <LogOut className="size-5" />
           </DockItem>
         </Dock>
